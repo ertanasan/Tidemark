@@ -1,5 +1,7 @@
 <img src="docs/icon.png" width="128" alt="Tidemark icon">
 
+<img width="1416" height="776" alt="image" src="https://github.com/user-attachments/assets/1de61423-62f2-4985-9321-2e83ace56762" />
+
 # Tidemark
 
 **Know where every gigabyte went.**
