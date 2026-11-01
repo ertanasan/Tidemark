@@ -55,3 +55,7 @@ Requires macOS 14+ and the Swift toolchain (Xcode or Command Line Tools).
 Open in Xcode with `xed .`. You can also scan a folder at launch: `open build/app.noindex/Tidemark.app --args /some/path`.
 
 `--install` also copies the **Open in Tidemark** Quick Action (`scripts/Open in Tidemark.workflow`) into `~/Library/Services`. If it doesn't show up, enable it in System Settings → Keyboard → Keyboard Shortcuts → Services → Files and Folders.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
