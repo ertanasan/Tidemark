@@ -38,7 +38,15 @@ Turn it on from **File → Scan Main Drive Daily When Idle**, or with the toggle
 
 ## Download
 
-Get **Tidemark-1.1-macOS.zip** from [Releases](https://github.com/ertanasan/Tidemark/releases/latest), unzip it and drag Tidemark to Applications. It's notarized by Apple and runs on Apple silicon and Intel Macs with macOS 14 or later. For complete results, give it Full Disk Access in System Settings → Privacy & Security. The Finder Quick Action isn't in the download; it comes with `./build.sh --install`.
+With [Homebrew](https://brew.sh):
+
+```sh
+brew tap ertanasan/tap
+brew trust ertanasan/tap
+brew install --cask tidemark
+```
+
+Or get **Tidemark-1.1-macOS.zip** from [Releases](https://github.com/ertanasan/Tidemark/releases/latest), unzip it and drag Tidemark to Applications. It's notarized by Apple and runs on Apple silicon and Intel Macs with macOS 14 or later. For complete results, give it Full Disk Access in System Settings → Privacy & Security. The Finder Quick Action isn't in the download; it comes with `./build.sh --install`.
 
 ## Build
 
