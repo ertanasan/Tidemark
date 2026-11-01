@@ -2,6 +2,8 @@
 
 # 🌊 Tidemark — top features
 
+**Know where every gigabyte went.**
+
 | | Feature | What it does |
 |:-:|---|---|
 | 🔔 | **Quiet growth tracking** | Tidemark checks your drive once a day while the Mac is idle. It sends a notification only when a folder grows unusually fast. |
