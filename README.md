@@ -1,7 +1,5 @@
 <img src="docs/icon.png" width="128" alt="Tidemark icon">
 
-<img width="1416" height="776" alt="image" src="https://github.com/user-attachments/assets/1de61423-62f2-4985-9321-2e83ace56762" />
-
 # Tidemark
 
 **Know where every gigabyte went.**
@@ -17,6 +15,11 @@ A native macOS disk-usage viewer (SwiftUI). Shows every mounted drive, fixed or 
 - Toggle between file size and size on disk; choose the display unit
 - Warns when Full Disk Access isn't granted
 - Finder integration: right-click a folder → Quick Actions (or Services) → **Open in Tidemark**
+
+<img width="1416" height="776" alt="image" src="https://github.com/user-attachments/assets/1de61423-62f2-4985-9321-2e83ace56762" />
+<img width="3158" height="1546" alt="image" src="https://github.com/user-attachments/assets/6536645e-db25-4911-bb5c-d2f2d9d64d3f" />
+<img width="1578" height="775" alt="image" src="https://github.com/user-attachments/assets/c96fe98c-fd3c-495d-bfdb-adf3690ccc7c" />
+<img width="1579" height="777" alt="image" src="https://github.com/user-attachments/assets/332825b9-f4a5-4fd8-baae-1dad58df939b" />
 
 ## Silent growth tracking
 
