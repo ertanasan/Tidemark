@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:Tidemark}",
+            "name": "Debug Tidemark",
+            "target": "Tidemark",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug Tidemark"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:Tidemark}",
+            "name": "Release Tidemark",
+            "target": "Tidemark",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release Tidemark"
+        }
+    ]
+}
