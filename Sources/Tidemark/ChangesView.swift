@@ -6,6 +6,7 @@ struct ChangesView: View {
     @EnvironmentObject private var m: AppModel
     @State private var sortOrder = [KeyPathComparator(\FolderChange.delta, order: .reverse)]
     @State private var selection = Set<ObjectIdentifier>()
+    @AppStorage("changesByCategory") private var byCategory = false
 
     private static let thresholds: [Int64] = [256 << 20, 512 << 20, 1 << 30, 5 << 30, 10 << 30]
     private static let rel: RelativeDateTimeFormatter = {
@@ -42,6 +43,8 @@ struct ChangesView: View {
                     ContentUnavailableView("No Big Changes", systemImage: "checkmark.circle",
                                            description: Text(emptyText))
                 }
+            } else if byCategory {
+                CategoriesView(rows: rows)
             } else {
                 table(rows)
             }
@@ -50,6 +53,13 @@ struct ChangesView: View {
 
     private var controls: some View {
         HStack(spacing: 14) {
+            Picker("Group by", selection: $byCategory) {
+                Text("Folders").tag(false)
+                Text("Categories").tag(true)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .fixedSize()
             Picker("Compare with", selection: $m.baseline) {
                 ForEach(m.baselines) { ref in
                     Text(label(ref)).tag(Optional(Baseline.snapshot(ref)))
