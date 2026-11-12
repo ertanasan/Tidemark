@@ -436,7 +436,7 @@ final class AppModel: ObservableObject {
 
     /// Asks for confirmation, moves the item to the Trash, and removes it from the scanned tree.
     /// Pass `node` for a folder; for a file pass its containing folder as `parent`.
-    func moveToTrash(path: String, node: DirNode?, parent: DirNode?) {
+    func moveToTrash(path: String, node: DirNode?, parent: DirNode?, note: String? = nil) {
         guard let parent = node?.parent ?? parent else { return }   // never the scan root
         let name = (path as NSString).lastPathComponent
         let alert = NSAlert()
@@ -446,6 +446,7 @@ final class AppModel: ObservableObject {
         if let node {
             info += "\n\n\(Fmt.size(node.value(mode), unit)) · \(Fmt.count(node.fileCount)) files, \(Fmt.count(node.dirCount)) folders"
         }
+        if let note { info += "\n\n" + note }
         alert.informativeText = info
         alert.addButton(withTitle: "Move to Trash").hasDestructiveAction = true
         alert.addButton(withTitle: "Cancel").keyEquivalent = "\u{1b}"
