@@ -475,6 +475,58 @@ final class AppModel: ObservableObject {
         updateRootVolume()
     }
 
+    /// Asks once, then moves several folders to the Trash and removes them from the scanned tree.
+    /// Folders inside another listed folder, and the scan root, are skipped.
+    func moveToTrash(folders: [(path: String, node: DirNode)], note: String? = nil) {
+        let listed = Set(folders.map { ObjectIdentifier($0.node) })
+        let items = folders.filter { f in
+            guard f.node.parent != nil else { return false }
+            var p = f.node.parent
+            while let a = p { if listed.contains(ObjectIdentifier(a)) { return false }; p = a.parent }
+            return true
+        }
+        if items.count < 2 {
+            if let f = items.first { moveToTrash(path: f.path, node: f.node, parent: nil, note: note) }
+            return
+        }
+        let total = items.reduce(Int64(0)) { $0 + $1.node.value(mode) }
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = "Move \(items.count) folders to the Trash?"
+        var info = items.prefix(8).map { Knowledge.display($0.path) }.joined(separator: "\n")
+        if items.count > 8 { info += "\n…and \(items.count - 8) more" }
+        info += "\n\n\(Fmt.size(total, unit)) in total"
+        if let note { info += "\n\n" + note }
+        alert.informativeText = info
+        alert.addButton(withTitle: "Move to Trash").hasDestructiveAction = true
+        alert.addButton(withTitle: "Cancel").keyEquivalent = "\u{1b}"
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+
+        var failed: [String] = []
+        for f in items {
+            guard let parent = f.node.parent else { continue }
+            do {
+                try FileManager.default.trashItem(at: URL(fileURLWithPath: f.path), resultingItemURL: nil)
+            } catch {
+                failed.append((f.path as NSString).lastPathComponent + ": " + error.localizedDescription)
+                continue
+            }
+            if scanning { trashedDuringScan.append(f.path) }
+            var s = selection
+            while let cur = s, cur !== f.node { s = cur.parent }
+            if s != nil { selection = parent }
+            parent.removeChild(f.node)
+        }
+        treeVersion += 1
+        updateRootVolume()
+        if !failed.isEmpty {
+            let err = NSAlert()
+            err.messageText = "Couldn’t move \(failed.count) of \(items.count) folders to the Trash"
+            err.informativeText = failed.prefix(8).joined(separator: "\n")
+            err.runModal()
+        }
+    }
+
     static func reveal(_ path: String) {
         NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
     }
