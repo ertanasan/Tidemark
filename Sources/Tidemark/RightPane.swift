@@ -28,14 +28,8 @@ struct RightPane: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Picker("", selection: $m.tab) {
-                ForEach(DetailTab.allCases) { t in
-                    Text(t == .changes && !m.changes.isEmpty ? "\(t.rawValue) (\(m.changes.count))" : t.rawValue).tag(t)
-                }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .padding(8)
+            TabBar(selection: $m.tab, changeCount: m.changes.count)
+                .padding(8)
             if !m.hasFullDiskAccess { AccessBanner() }
             if let node = m.selected {
                 switch m.tab {
@@ -48,6 +42,45 @@ struct RightPane: View {
             } else {
                 Color.clear
             }
+        }
+    }
+}
+
+/// Tabs drawn as buttons, each with its own colour: the selected one is solid, the others a light tint with an outline.
+/// The native segmented control is hard to tell apart on a dark background.
+private struct TabBar: View {
+    @Binding var selection: DetailTab
+    let changeCount: Int
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(DetailTab.allCases) { t in
+                let on = t == selection
+                Button { selection = t } label: {
+                    Text(t == .changes && changeCount > 0 ? "\(t.rawValue) (\(changeCount))" : t.rawValue)
+                        .fontWeight(on ? .semibold : .regular)
+                        .foregroundStyle(on ? Color.white : .primary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 5)
+                        .background(RoundedRectangle(cornerRadius: 6).fill(on ? t.tint : t.tint.opacity(0.16)))
+                        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(t.tint.opacity(on ? 0 : 0.5)))
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(on ? .isSelected : [])
+            }
+        }
+    }
+}
+
+private extension DetailTab {
+    var tint: Color {
+        switch self {
+        case .chart: return .purple
+        case .details: return .blue
+        case .extensions: return .green
+        case .largest: return .orange
+        case .changes: return .pink
         }
     }
 }
