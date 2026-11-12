@@ -34,6 +34,28 @@ enum Safety {
         }
     }
 
+    /// Position when groups are listed: what you can act on first.
+    var order: Int {
+        switch self {
+        case .safe: return 0
+        case .redownload: return 1
+        case .elsewhere: return 2
+        case .unknown: return 3
+        case .keep: return 4
+        }
+    }
+
+    /// What the label means for the person reading it.
+    var meaning: String {
+        switch self {
+        case .safe: return "Nothing is lost: the app or tool recreates these on its own. Move them to the Trash to free the space."
+        case .redownload: return "You can delete these; they are downloaded again the next time they're needed, which may take a while."
+        case .elsewhere: return "Don't delete these by hand. Select a folder to see the right way to remove it, such as from inside the app that owns it."
+        case .unknown: return "Tidemark doesn't recognise these. Open each in Finder and check what it is before deleting."
+        case .keep: return "Your own data, or part of an app or macOS. Deleting it could lose something or break things."
+        }
+    }
+
     /// Deleting the folder directly is a reasonable thing to offer.
     var deletable: Bool { self == .safe || self == .redownload }
 }
