@@ -107,25 +107,61 @@ struct CategoriesView: View {
                     Divider()
                     Button("Go to Folder") { m.navigate(to: c.node) }
                     PathMenu(path: c.path)
-                    if info.safety.deletable, c.node.parent != nil {
-                        Divider()
-                        Button("Move to Trash…", role: .destructive) {
-                            m.moveToTrash(path: c.path, node: c.node, parent: nil, note: info.advice)
-                        }
-                    }
+                }
+                let t = trashable(picked)
+                if !t.isEmpty {
+                    Divider()
+                    trashButton(t)
                 }
             } primaryAction: { ids in
                 if let c = ids.compactMap({ byID[$0]?.change }).first { m.navigate(to: c.node) }
             }
             Divider()
-            detail(for: selection.count == 1 ? selection.first.flatMap { byID[$0] } : nil)
+            detail(picked: selection.compactMap { byID[$0] })
+        }
+    }
+
+    /// The folders a selection stands for: a folder row is itself, a group row is all its folders.
+    private func folders(in picked: [Item]) -> [Item] {
+        var seen = Set<String>()
+        return picked.flatMap { $0.change != nil ? [$0] : ($0.children ?? []) }.filter { seen.insert($0.id).inserted }
+    }
+
+    /// Folders in the selection that are reasonable to move to the Trash directly.
+    private func trashable(_ picked: [Item]) -> [Item] {
+        folders(in: picked).filter { ($0.info?.safety.deletable ?? false) && $0.change?.node.parent != nil }
+    }
+
+    private func trashButton(_ items: [Item]) -> some View {
+        Button(items.count == 1 ? "Move to Trash…" : "Move \(items.count) Folders to Trash…", role: .destructive) {
+            m.moveToTrash(folders: items.compactMap { i in i.change.map { ($0.path, $0.node) } },
+                          note: items.count == 1 ? items[0].info?.advice
+                              : "Everything listed is marked safe to delete or re-downloadable.")
         }
     }
 
     @ViewBuilder
-    private func detail(for item: Item?) -> some View {
+    private func detail(picked: [Item]) -> some View {
+        let item = picked.count == 1 ? picked[0] : nil
+        let t = trashable(picked)
         Group {
-            if let c = item?.change, let info = item?.info {
+            if picked.count > 1 {
+                let all = folders(in: picked)
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text("\(all.count) folders selected").font(.headline)
+                        Spacer()
+                        if !t.isEmpty { trashButton(t) }
+                    }
+                    Text("Together they use \(Fmt.size(all.reduce(0) { $0 + $1.now }, m.unit)) and grew by \(Fmt.size(all.reduce(0) { $0 + $1.delta }, m.unit)).")
+                    Text(t.isEmpty
+                         ? "None of them is marked safe to delete directly. Select one to see what to do."
+                         : t.count == all.count
+                             ? "All of them are safe to delete or re-downloadable; moving them frees \(Fmt.size(t.reduce(0) { $0 + $1.now }, m.unit))."
+                             : "\(t.count) of them are safe to delete or re-downloadable (\(Fmt.size(t.reduce(0) { $0 + $1.now }, m.unit))); the button moves only those.")
+                        .foregroundStyle(.secondary)
+                }
+            } else if let c = item?.change, let info = item?.info {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 8) {
                         Text(info.what).font(.headline)
@@ -133,11 +169,7 @@ struct CategoriesView: View {
                         Spacer()
                         Button("Go to Folder") { m.navigate(to: c.node) }
                         Button("Show in Finder") { AppModel.reveal(c.path) }
-                        if info.safety.deletable, c.node.parent != nil {
-                            Button("Move to Trash…", role: .destructive) {
-                                m.moveToTrash(path: c.path, node: c.node, parent: nil, note: info.advice)
-                            }
-                        }
+                        if !t.isEmpty { trashButton(t) }
                     }
                     Text(info.advice).fixedSize(horizontal: false, vertical: true)
                     Text(c.path).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
@@ -145,7 +177,11 @@ struct CategoriesView: View {
                 }
             } else if let item, let kids = item.children {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(item.name).font(.headline)
+                    HStack {
+                        Text(item.name).font(.headline)
+                        Spacer()
+                        if !t.isEmpty { trashButton(t) }
+                    }
                     if let g = item.group { Text(g.meaning) }
                     Text("\(kids.count) folder\(kids.count == 1 ? "" : "s") grew by \(Fmt.size(item.delta, m.unit)) in total, now using \(Fmt.size(item.now, m.unit)).")
                     Text(item.free > 0
