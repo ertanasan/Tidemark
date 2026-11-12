@@ -2,12 +2,13 @@ import SwiftUI
 
 /// What a person should do about a folder that grew.
 enum Safety {
-    case safe, redownload, elsewhere, keep, unknown
+    case safe, redownload, recreate, elsewhere, keep, unknown
 
     var label: String {
         switch self {
         case .safe: return "Safe to delete"
         case .redownload: return "Re-downloads when needed"
+        case .recreate: return "Recreated when needed"
         case .elsewhere: return "Remove another way"
         case .keep: return "Keep"
         case .unknown: return "Check first"
@@ -18,6 +19,7 @@ enum Safety {
         switch self {
         case .safe: return "checkmark.circle.fill"
         case .redownload: return "arrow.down.circle.fill"
+        case .recreate: return "arrow.clockwise.circle.fill"
         case .elsewhere: return "arrow.turn.up.right"
         case .keep: return "hand.raised.fill"
         case .unknown: return "questionmark.circle.fill"
@@ -28,6 +30,7 @@ enum Safety {
         switch self {
         case .safe: return .green
         case .redownload: return .teal
+        case .recreate: return .cyan
         case .elsewhere: return .orange
         case .keep: return .red
         case .unknown: return .gray
@@ -39,9 +42,10 @@ enum Safety {
         switch self {
         case .safe: return 0
         case .redownload: return 1
-        case .elsewhere: return 2
-        case .unknown: return 3
-        case .keep: return 4
+        case .recreate: return 2
+        case .elsewhere: return 3
+        case .unknown: return 4
+        case .keep: return 5
         }
     }
 
@@ -50,6 +54,7 @@ enum Safety {
         switch self {
         case .safe: return "Nothing is lost: the app or tool recreates these on its own. Move them to the Trash to free the space."
         case .redownload: return "You can delete these; they are downloaded again the next time they're needed, which may take a while."
+        case .recreate: return "You can delete these; the tool creates them again when you need them, but anything stored inside is lost."
         case .elsewhere: return "Don't delete these by hand. Select a folder to see the right way to remove it, such as from inside the app that owns it."
         case .unknown: return "Tidemark doesn't recognise these. Open each in Finder and check what it is before deleting."
         case .keep: return "Your own data, or part of an app or macOS. Deleting it could lose something or break things."
@@ -57,7 +62,7 @@ enum Safety {
     }
 
     /// Deleting the folder directly is a reasonable thing to offer.
-    var deletable: Bool { self == .safe || self == .redownload }
+    var deletable: Bool { self == .safe || self == .redownload || self == .recreate }
 }
 
 struct Classification {
@@ -111,7 +116,7 @@ enum Knowledge {
           "Keep archives of versions you've shipped; Xcode needs them to read crash reports. Remove old ones in Xcode ▸ Window ▸ Organizer."),
         r(.has("DeviceSupport"), app: "Xcode", .redownload, "Debug symbols from your devices",
           "Xcode copies them again, taking a few minutes, the next time you connect that device."),
-        r(.has("CoreSimulator/Devices"), app: "Xcode", .redownload, "Simulated iPhones and iPads with their apps",
+        r(.has("CoreSimulator/Devices"), app: "Xcode", .recreate, "Simulated iPhones and iPads with their apps",
           "Each folder is one simulator device with its test apps and data. Xcode can create the device again when you need it, but whatever was installed on it is lost. If Xcode still lists the device afterwards, run “xcrun simctl delete <UDID>” or remove it in Xcode ▸ Window ▸ Devices and Simulators."),
         r(.has("CoreSimulator/Caches"), app: "Xcode", .safe, "Simulator cache", "Xcode recreates it as needed."),
         r(.has("CoreDevice"), app: "Xcode", .safe, "Cache of apps installed on devices",

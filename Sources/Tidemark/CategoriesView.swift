@@ -136,7 +136,7 @@ struct CategoriesView: View {
         Button(items.count == 1 ? "Move to Trash…" : "Move \(items.count) Folders to Trash…", role: .destructive) {
             m.moveToTrash(folders: items.compactMap { i in i.change.map { ($0.path, $0.node) } },
                           note: items.count == 1 ? items[0].info?.advice
-                              : "Everything listed is marked safe to delete or re-downloadable.")
+                              : "Everything listed is marked safe to remove.")
         }
     }
 
@@ -157,8 +157,8 @@ struct CategoriesView: View {
                     Text(t.isEmpty
                          ? "None of them is marked safe to delete directly. Select one to see what to do."
                          : t.count == all.count
-                             ? "All of them are safe to delete or re-downloadable; moving them frees \(Fmt.size(t.reduce(0) { $0 + $1.now }, m.unit))."
-                             : "\(t.count) of them are safe to delete or re-downloadable (\(Fmt.size(t.reduce(0) { $0 + $1.now }, m.unit))); the button moves only those.")
+                             ? "All of them are safe to remove; moving them frees \(Fmt.size(t.reduce(0) { $0 + $1.now }, m.unit))."
+                             : "\(t.count) of them are safe to remove (\(Fmt.size(t.reduce(0) { $0 + $1.now }, m.unit))); the button moves only those.")
                         .foregroundStyle(.secondary)
                 }
             } else if let c = item?.change, let info = item?.info {
