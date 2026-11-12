@@ -1,8 +1,12 @@
 import SwiftUI
 
-/// The Changes list regrouped by app or tool, each with what it is and whether it's safe to delete.
+/// The Changes list regrouped, each folder with what it is and whether it's safe to delete.
+/// Grouped by what to do about it (`.action`) or by the app or tool it belongs to (`.app`).
 struct CategoriesView: View {
+    enum Grouping { case app, action }
+
     let rows: [FolderChange]
+    let by: Grouping
     @EnvironmentObject private var m: AppModel
     @State private var selection = Set<String>()
 
@@ -16,6 +20,8 @@ struct CategoriesView: View {
         let delta: Int64
         /// Space freed by deleting what is safe to delete.
         let free: Int64
+        /// The safety level a group row stands for; nil in app grouping and on folder rows.
+        var group: Safety? = nil
         var children: [Item]?
     }
 
@@ -32,17 +38,25 @@ struct CategoriesView: View {
 
     private var items: [Item] {
         let classified = leaves.map { ($0, Knowledge.classify($0.path)) }
-        return Dictionary(grouping: classified, by: { $0.1.app }).map { app, group in
+        let groups: [(name: String, safety: Safety?, rows: [(FolderChange, Classification)])]
+        switch by {
+        case .app:
+            groups = Dictionary(grouping: classified, by: { $0.1.app }).map { ($0.key, nil, $0.value) }
+        case .action:
+            groups = Dictionary(grouping: classified, by: { $0.1.safety }).map { ($0.key.label, $0.key, $0.value) }
+        }
+        let items = groups.map { name, safety, group in
             let kids = group.map { c, info in
                 Item(id: "f" + c.path, name: Knowledge.display(c.path), change: c, info: info,
                      now: c.now, delta: c.delta, free: info.safety.deletable ? c.now : 0, children: nil)
             }
             .sorted { $0.delta > $1.delta }
-            return Item(id: "c" + app, name: app, change: nil, info: nil,
+            return Item(id: "c" + name, name: name, change: nil, info: nil,
                         now: kids.reduce(0) { $0 + $1.now }, delta: kids.reduce(0) { $0 + $1.delta },
-                        free: kids.reduce(0) { $0 + $1.free }, children: kids)
+                        free: kids.reduce(0) { $0 + $1.free }, group: safety, children: kids)
         }
-        .sorted { $0.delta > $1.delta }
+        return by == .app ? items.sorted { $0.delta > $1.delta }
+                          : items.sorted { ($0.group?.order ?? 0) < ($1.group?.order ?? 0) }
     }
 
     var body: some View {
@@ -53,16 +67,20 @@ struct CategoriesView: View {
             Table(items, children: \.children, selection: $selection) {
                 TableColumn("Name") { i in
                     HStack(spacing: 6) {
-                        Image(systemName: i.change == nil ? "square.stack.3d.up.fill" : "folder.fill")
-                            .foregroundStyle(i.change == nil ? Color.accentColor : .yellow)
+                        Image(systemName: i.change != nil ? "folder.fill" : i.group?.symbol ?? "square.stack.3d.up.fill")
+                            .foregroundStyle(i.change != nil ? Color.yellow : i.group?.color ?? .accentColor)
                         Text(i.name).fontWeight(i.change == nil ? .semibold : .regular)
                             .lineLimit(1).truncationMode(.middle)
                     }
                     .help(i.change?.path ?? i.name)
                 }
                 .width(min: 200, ideal: 340)
-                TableColumn("What to do") { i in
-                    if let s = i.info?.safety { SafetyBadge(safety: s) }
+                TableColumn(by == .app ? "What to do" : "App") { i in
+                    if by == .app {
+                        if let s = i.info?.safety { SafetyBadge(safety: s) }
+                    } else if let app = i.info?.app {
+                        Text(app).lineLimit(1)
+                    }
                 }
                 .width(min: 150, ideal: 180)
                 TableColumn("Now") { i in
@@ -128,6 +146,7 @@ struct CategoriesView: View {
             } else if let item, let kids = item.children {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(item.name).font(.headline)
+                    if let g = item.group { Text(g.meaning) }
                     Text("\(kids.count) folder\(kids.count == 1 ? "" : "s") grew by \(Fmt.size(item.delta, m.unit)) in total, now using \(Fmt.size(item.now, m.unit)).")
                     Text(item.free > 0
                          ? "\(Fmt.size(item.free, m.unit)) of it can be freed by deleting what is safe to delete. Select a folder for details."

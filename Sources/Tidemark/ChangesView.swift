@@ -1,12 +1,21 @@
 import SwiftUI
 
+enum ChangesGrouping: String, CaseIterable {
+    /// By what to do about them: safe to delete, re-downloads, remove another way, keep.
+    case groups = "Groups"
+    /// By the app or tool they belong to.
+    case categories = "Categories"
+    /// The plain folder list.
+    case folders = "Folders"
+}
+
 /// Folders that are new, went past the threshold, or grew by it since the chosen baseline.
 struct ChangesView: View {
     let node: DirNode
     @EnvironmentObject private var m: AppModel
     @State private var sortOrder = [KeyPathComparator(\FolderChange.delta, order: .reverse)]
     @State private var selection = Set<ObjectIdentifier>()
-    @AppStorage("changesByCategory") private var byCategory = false
+    @AppStorage("changesGrouping") private var grouping = ChangesGrouping.groups
 
     private static let thresholds: [Int64] = [256 << 20, 512 << 20, 1 << 30, 5 << 30, 10 << 30]
     private static let rel: RelativeDateTimeFormatter = {
@@ -43,19 +52,20 @@ struct ChangesView: View {
                     ContentUnavailableView("No Big Changes", systemImage: "checkmark.circle",
                                            description: Text(emptyText))
                 }
-            } else if byCategory {
-                CategoriesView(rows: rows)
             } else {
-                table(rows)
+                switch grouping {
+                case .groups: CategoriesView(rows: rows, by: .action)
+                case .categories: CategoriesView(rows: rows, by: .app)
+                case .folders: table(rows)
+                }
             }
         }
     }
 
     private var controls: some View {
         HStack(spacing: 14) {
-            Picker("Group by", selection: $byCategory) {
-                Text("Folders").tag(false)
-                Text("Categories").tag(true)
+            Picker("Group by", selection: $grouping) {
+                ForEach(ChangesGrouping.allCases, id: \.self) { Text($0.rawValue) }
             }
             .pickerStyle(.segmented)
             .labelsHidden()
