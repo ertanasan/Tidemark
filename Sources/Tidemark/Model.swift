@@ -244,10 +244,17 @@ final class AppModel: ObservableObject {
         guard p === currentProgress, root == nil else { return }   // the scan finished first, or another started
         cachedScanDate = date
         show(result, reselect: reselect)
-        // Compare with the scan before the cached one (the newest snapshot is the cached scan itself).
+        // The newest snapshot is the cached scan itself; compare with one from about 30 days earlier.
         baselines = SnapshotStore.list(covering: result.root.name)
-        baseline = baselines.first(where: { $0.date < date.addingTimeInterval(-1) }).map(Baseline.snapshot)
-            ?? .createdWithin(days: 30)
+        baseline = defaultBaseline(before: date)
+    }
+
+    /// The earlier scan nearest to 30 days before `date`, or folders created in the last 30 days when there is none.
+    private func defaultBaseline(before date: Date) -> Baseline {
+        let target = date.addingTimeInterval(-30 * 86400)
+        return baselines.filter { $0.date < date.addingTimeInterval(-1) }
+            .min { abs($0.date.timeIntervalSince(target)) < abs($1.date.timeIntervalSince(target)) }
+            .map(Baseline.snapshot) ?? .createdWithin(days: 30)
     }
 
     private func finish(_ result: ScanResult?, date: Date, progress p: ScanProgress, reselect: String?) {
@@ -267,13 +274,13 @@ final class AppModel: ObservableObject {
         cachedScanDate = nil
         UserDefaults.standard.set(result.root.name, forKey: "lastRoot")
 
-        // Compare with the previous scan, then record this one for next time.
+        // Compare with a scan from about 30 days ago, then record this one for next time.
         baselines = SnapshotStore.list(covering: result.root.name)
         if let want = compareWith, let ref = baselines.first(where: { abs($0.date.timeIntervalSince(want)) < 1 }) {
             baseline = .snapshot(ref)
             tab = .changes
         } else {
-            baseline = baselines.first.map(Baseline.snapshot) ?? .createdWithin(days: 30)
+            baseline = defaultBaseline(before: date)
         }
         compareWith = nil
         let r = result.root
